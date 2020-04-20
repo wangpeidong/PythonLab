@@ -90,24 +90,3 @@ def evalPortfolio(tickers):
     print(main_df.tail())
     return main_df
 
-portfolio = levelPrice(evalPortfolio(consolidateQuotes()))
-
-benchmarks = pd.Series(['^GSPC', '^IXIC', '^DJI'])
-    
-import sys
-print(sys.argv[1:])
-df = levelPrice(combineAdjClose(benchmarks.append(pd.Series(sys.argv[1:]))))
-df = df.join(portfolio, how='outer')
-
-# Plot data frame
-import matplotlib.pyplot as plt
-from matplotlib import style
-style.use('ggplot') 
-df[-200:-1].plot()
-
-plt.title('Stock Performance')
-plt.ylabel('Scaled Price')
-plt.xlabel('Trade Date')
-plt.show()
-
-
