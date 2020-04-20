@@ -103,7 +103,11 @@ df = df.join(portfolio, how='outer')
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('ggplot') 
-df[-50:-1].plot()
+df[-200:-1].plot()
+
+plt.title('Stock Performance')
+plt.ylabel('Scaled Price')
+plt.xlabel('Trade Date')
 plt.show()
 
 
