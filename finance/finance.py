@@ -5,34 +5,31 @@ import os.path as path
 start_date = dt.datetime(2015, 1, 2)
 end_date = dt.datetime.now()
 
-# Source price for given tickers
-def sourcePrices(tickers):
-    for ticker in tickers:
-        if path.exists(f'prices/{ticker}.csv'):
-            print(f'{ticker} sourced already')
-            pass
-        else:
-            df = web.DataReader(ticker, 'yahoo', start_date, end_date)
-            df.to_csv(f'prices/{ticker}.csv')
-            print(f'sourcing {ticker}')
-    print(f'---sourced {len(tickers)} tickers---')
-
 import pandas as pd
-# Source benchmark 
-benchmarks = pd.Series(['^GSPC', '^IXIC', '^DJI'])
-#sourcePrices(benchmarks)
-
-# Source my portfolio
-df = pd.read_csv("quotes.csv")
-tickers = df['Symbol'].drop_duplicates()
-#sourcePrices(tickers)
+# Source price for a given ticker
+def sourcePrices(ticker):
+    tickerFile = f'prices/{ticker}.csv'
+    prcDf = pd.DataFrame()
+    try:
+        if path.exists(tickerFile):
+            print(f'{ticker} sourced already')
+            prcDf = pd.read_csv(tickerFile)
+            prcDf.set_index('Date', inplace=True)
+        else:
+            prcDf = web.DataReader(ticker, 'yahoo', start_date, end_date)
+            prcDf.to_csv(tickerFile)
+            print(f'sourcing {ticker}')
+    except Exception as e:
+        print(f'Exception: {str(e)}')
+    return prcDf
 
 # Combine multiple tickers 'Adj Close' into the same data frame
 def combineAdjClose(tickers):       
     main_df = pd.DataFrame()
     for ticker in tickers:
-        df = pd.read_csv(f'prices/{ticker}.csv')
-        df.set_index('Date', inplace=True)
+        df = sourcePrices(ticker)
+        if df.empty:
+            continue
         
         df.rename(columns = {'Adj Close': ticker}, inplace = True)
         df.drop(['Open', 'High', 'Low', 'Close', 'Volume'], 1, inplace = True)
@@ -41,9 +38,7 @@ def combineAdjClose(tickers):
             main_df = df
         else:
             main_df = main_df.join(df, how='outer')
-        print(f'append {ticker}')
         
-    print(main_df.head())
     print(main_df.tail())
     return main_df
 
@@ -54,11 +49,17 @@ def levelPrice(df):
     for ind, column in enumerate(df.columns):
         df[column] = scaledDf[:,ind]
     return df
+
+# Source my portfolio
+#df = pd.read_csv("quotes.csv")
+#tickers = df['Symbol'].drop_duplicates()
+
+# Source benchmark
+benchmarks = pd.Series(['^GSPC', '^IXIC', '^DJI'])
     
 import sys
-begin =  int(sys.argv[1])
-end = int(sys.argv[2])
-df = levelPrice(combineAdjClose(benchmarks.append(tickers[begin:end])))
+print(sys.argv[1:])
+df = levelPrice(combineAdjClose(benchmarks.append(pd.Series(sys.argv[1:]))))
 
 # Plot data frame
 import matplotlib.pyplot as plt
