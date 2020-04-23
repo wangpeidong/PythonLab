@@ -42,7 +42,7 @@ def combineAdjClose(tickers):
     print(main_df.tail())
     return main_df
 
-# Level price to compare Apple to Pearl
+# Scale price to leveling for Apple to Pearl comparation
 from sklearn.preprocessing import StandardScaler
 def levelPrice(df):
     scaled_df = StandardScaler().fit_transform(df)
@@ -50,7 +50,7 @@ def levelPrice(df):
         df[column] = scaled_df[:,ind]
     return df
 
-# Consolidate portfolio quotes to sum quantity per ticker
+# Consolidate portfolio quotes to sum quantity per ticker (Multiple lots ticker has multiple quotes)
 # return dictionary[ticker, quantity]
 def consolidateQuotes():
     tickers = {}
@@ -67,7 +67,7 @@ def consolidateQuotes():
     print(f'{len(tickers)} tickers out of {len(df)} quotes consolidated ')
     return tickers
 
-# Evaluate portfolio performance
+# Evaluate portfolio average Adj Close price
 # Input: dictionary[ticker, quantity]
 def evalPortfolio(tickers):
     main_df = pd.DataFrame()
@@ -90,3 +90,24 @@ def evalPortfolio(tickers):
     print(main_df.tail())
     return main_df
 
+import matplotlib.pyplot as plt
+# Plot DMA 200, 50, 20 for a given ticker
+def plotDMA(ticker):
+	df = sourcePrices(ticker)
+	if df.empty:
+		return
+	df['200-DMA'] = df['Adj Close'].rolling(window = 200, min_periods = 0).mean()
+	df['50-DMA'] = df['Adj Close'].rolling(window = 50, min_periods = 0).mean()
+	df['20-DMA'] = df['Adj Close'].rolling(window = 20, min_periods = 0).mean()
+
+	# 6x1 grid, start at (0, 0), span 5 rows and 1 column
+	ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan = 5, colspan = 1)
+	# 6x1 grid, start at (5, 0), span 1 row and 1 column, align x axis with ax1
+	ax2 = plt.subplot2grid((6, 1), (5, 0), rowspan = 1, colspan = 1, sharex = ax1)
+
+	df = df[-200:-1]
+	ax1.plot(df.index, df['Adj Close'])
+	ax1.plot(df.index, df['200-DMA'])
+	ax1.plot(df.index, df['50-DMA'])
+	ax1.plot(df.index, df['20-DMA'])
+	ax2.bar(df.index, df['Volume'])
