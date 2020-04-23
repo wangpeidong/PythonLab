@@ -13,8 +13,8 @@ def sourcePrices(ticker):
     try:
         if path.exists(ticker_file):
             print(f'{ticker} prices sourced already')
-            prc_df = pd.read_csv(ticker_file)
-            prc_df.set_index('Date', inplace=True)
+            prc_df = pd.read_csv(ticker_file, index_col=0, parse_dates=True)
+            #prc_df.set_index('Date', inplace=True)
         else:
             prc_df = web.DataReader(ticker, 'yahoo', start_date, end_date)
             prc_df.to_csv(ticker_file)
@@ -96,8 +96,8 @@ def plotDMA(ticker):
 	df = sourcePrices(ticker)
 	if df.empty:
 		return
-	df['200-DMA'] = df['Adj Close'].rolling(window = 200, min_periods = 0).mean()
-	df['50-DMA'] = df['Adj Close'].rolling(window = 50, min_periods = 0).mean()
+	df['5-DMA'] = df['Adj Close'].rolling(window = 5, min_periods = 0).mean()
+	df['10-DMA'] = df['Adj Close'].rolling(window = 10, min_periods = 0).mean()
 	df['20-DMA'] = df['Adj Close'].rolling(window = 20, min_periods = 0).mean()
 
 	# 6x1 grid, start at (0, 0), span 5 rows and 1 column
@@ -106,8 +106,34 @@ def plotDMA(ticker):
 	ax2 = plt.subplot2grid((6, 1), (5, 0), rowspan = 1, colspan = 1, sharex = ax1)
 
 	df = df[-200:-1]
-	ax1.plot(df.index, df['Adj Close'])
-	ax1.plot(df.index, df['200-DMA'])
-	ax1.plot(df.index, df['50-DMA'])
-	ax1.plot(df.index, df['20-DMA'])
-	ax2.bar(df.index, df['Volume'])
+	idx = pd.to_datetime(df.index)
+
+	ax1.plot(idx, df['Adj Close'])
+	ax1.plot(idx, df['5-DMA'])
+	ax1.plot(idx, df['10-DMA'])
+	ax1.plot(idx, df['20-DMA'])
+	ax2.bar(idx, df['Volume'])
+
+	plt.xlabel('Trade Date')
+	plt.show()
+
+import mplfinance as mpf
+def plotOHLC(ticker):
+	# Load data file.
+	df = sourcePrices(ticker)
+	if df.empty:
+		return
+
+	df = df[-200:-1]
+	 
+	# Plot candlestick.
+	# Add volume.
+	# Add moving averages: 3,6,9.
+	# Save graph to *.png.
+	mpf.plot(df, type = 'candle', style = 'yahoo',
+		title = ticker,
+		ylabel = 'Price',
+		ylabel_lower = 'Trade\nDate',
+		volume = True, 
+		mav = (5, 10, 20)) 
+		#savefig = f'{ticker}.png')
