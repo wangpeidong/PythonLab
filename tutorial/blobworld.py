@@ -1,4 +1,5 @@
 import pygame
+import time
 from blob import *
 
 class RedBlob(Blob):
@@ -41,9 +42,10 @@ def main():
 		draw_environment(blobs)
 		blobs = handle_collisions(blobs)
 		for blob in blobs: blob.move()
+		time.sleep(0.0001)
 		clock.tick(60)
 
-if __name__ == '__main__':
+def set_logging():
 	stream_handler = logging.StreamHandler()
 	stream_handler.setLevel(logging.INFO)
 
@@ -59,5 +61,7 @@ if __name__ == '__main__':
 		]
 	)
 
+if __name__ == '__main__':
+	set_logging()
 	main()
     
