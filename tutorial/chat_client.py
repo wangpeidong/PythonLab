@@ -1,66 +1,48 @@
 import socket
-import select 
-import errno
-import sys
 
 import logging
-import time
-from chat_bot import ChatBot, PORT
+from chat_bot import ClientChatBot, PORT
 
-import multiprocessing
+def error_callback(error):
+	logging.error(f'encountered error: {error}')
 
-def listener_bot(chat_bot, client_socket):
-	print(f'starting listener bot ...')
-	logging.info(f'starting listener bot ...')
-	while True:
-		message = chat_bot.recv_message(client_socket)
-		if message is None: break
-		print(f'received message header: {message["header"]} body: {message["body"]}')
-		logging.info(f'received message header: {message["header"]} body: {message["body"]}')
+def incoming_callback(username, message):
+	logging.info(f'received message: {message} from user: {username}')
 
-def spawn_listener():
-	process = multiprocessing.Process(target = listener_bot, args = (chat_bot, client_socket))
-	process.start()
-	return process
-
-def run_chat_bot():
-
-	def logon_new_user():
-		username = input('Username: ')
-		if username:
-			chat_bot.send_message(client_socket, username)
-			return username
-		return None
-
-	def chat(username):
-		message = input(f'{username} > ')
-		if message:
-			chat_bot.send_message(client_socket, message)
-			return True
+def run_chat_bot(chat_bot):
+	username = None
+	# Connect with username first
+	def connect():
+		run_chat_bot.username = input('Username: ')
+		if run_chat_bot.username:
+			return chat_bot.connect(socket.gethostname(), PORT, run_chat_bot.username, error_callback)
 		return False
 
-	client_socket.connect((socket.gethostname(), PORT))
+	def chat():
+		while True:
+			message = input(f'{run_chat_bot.username} > ')
+			if not message:
+				break
+			chat_bot.send(message)
 
-	username = logon_new_user()
-	if username is None: return
+	if not connect(): 
+		return
 
-	while chat(username):
-		pass
+	# Spawn a thread to listen for incoming message
+	chat_bot.start_listening(incoming_callback, error_callback)
+
+	chat()
 
 	logging.info(f'chat ended')
 
 if __name__ == '__main__':
 	try:
-		chat_bot = ChatBot(logging.INFO)
-		client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		process = spawn_listener()
-		run_chat_bot()
+		chat_bot = ClientChatBot(logging.INFO)
+		run_chat_bot(chat_bot)
 	except Exception as e:
-		logging.warning(f'Exception: {str(e)}')
+		logging.warning(f'[main] exception: {str(e)}')
 	finally:
-		client_socket.shutdown(socket.SHUT_WR) # Required for multiprocessing
-		client_socket.close()
-		logging.info('socket closed')
-		process.terminate()
-		logging.info('listener terminated')
+		if chat_bot.client_socket is not None:
+			chat_bot.client_socket.close()
+			logging.info('socket closed')
 
