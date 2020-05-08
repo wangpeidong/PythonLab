@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 img = cv2.imread('img.jpg')
-msk = cv2.imread('imgmask.jpg', cv2.CV_8UC1)
+msk = cv2.imread('imgmask.jpg', cv2.CV_8UC1) # mask must be converted to 8-bit 1-channel image
 
 cv2.imshow('img', img)
 cv2.imshow('msk', msk)
