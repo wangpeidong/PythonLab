@@ -51,6 +51,16 @@ def plot_pnl(symbol, bench):
 	             xytext=(-10, 25), textcoords='offset pixels', bbox=bbox_props, 
 	             arrowprops=dict(facecolor='grey', color='grey', arrowstyle='fancy'))
 
+	# Add volume into the same axis instead of a subplot
+	volume = df['Volume']
+	ax1v = ax1.twinx()
+	ax1v.fill_between(date, 0, volume, facecolor='#0079a3', alpha=0.5)
+	# Smart way to turn off y tick labels
+	ax1v.axes.yaxis.set_ticklabels([])
+	ax1v.grid(False)
+	# The max height is 1/5th of the y axis
+	ax1v.set_ylim(0, 5*volume.max())
+
 	plt.xlabel('Trade Date')
 	plt.ylabel('Adj Close')
 	plt.title(symbol, fontdict = {'color':'blue'})
