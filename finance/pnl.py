@@ -40,8 +40,8 @@ def plot_pnl(symbol, bench):
 	ax1.fill_between(date, bench, closep, where=(closep > bench), facecolor='g', alpha=0.5)
 	ax1.fill_between(date, bench, closep, where=(closep < bench), facecolor='r', alpha=0.5)
 	# smart way to display legend with empty plot
-	ax1.plot([],[],linewidth=5, label='loss', color='r',alpha=0.5)
-	ax1.plot([],[],linewidth=5, label='gain', color='g',alpha=0.5)
+	ax1.plot([],[],linewidth=5, label='Loss', color='r',alpha=0.5)
+	ax1.plot([],[],linewidth=5, label='Gain', color='g',alpha=0.5)
 	ax1.axhline(bench, color='k', linewidth=1)
 
 	bbox_props = dict(boxstyle='round',fc='w', ec='k',lw=1)
@@ -54,7 +54,7 @@ def plot_pnl(symbol, bench):
 	plt.xlabel('Trade Date')
 	plt.ylabel('Adj Close')
 	plt.title(symbol, fontdict = {'color':'blue'})
-	plt.legend()
+	plt.legend(loc=3, prop={'size': 5})
 	plt.subplots_adjust(left=0.09, bottom=0.20, right=0.94, top=0.90, wspace=0.2, hspace=0)
 	plt.show()
 
