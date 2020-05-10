@@ -54,6 +54,8 @@ def plot_pnl(symbol, bench):
 	# Add volume into the same axis instead of a subplot
 	volume = df['Volume']
 	ax1v = ax1.twinx()
+	# Smart way to draw label
+	ax1v.plot([], [], color='#0079a3', alpha=0.5, label='Volume')
 	ax1v.fill_between(date, 0, volume, facecolor='#0079a3', alpha=0.5)
 	# Smart way to turn off y tick labels
 	ax1v.axes.yaxis.set_ticklabels([])
