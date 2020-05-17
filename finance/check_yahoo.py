@@ -1,17 +1,109 @@
 import urllib.request
-import os, time
+import os, time, re
 import pandas as pd
+from datetime import datetime
 
-def Check_Yahoo(stock_list):
+categories = ('key-statistics', 'financials', 'analysis', 'options')
+
+def parse_Options(symbol):
+    html_file = f'yahoo/{symbol}_{categories[3]}.html'
+    options_list = pd.read_html(html_file)
+    if not options_list:
+        return None
+
+    call = options_list[0]
+    if call is not None and not call.empty:
+        call['CallPut'] = 'call'
+        call['Symbol'] = symbol
+
+    if len(options_list) > 1:
+        put = options_list[1]
+        if put is not None and not put.empty:
+            put['CallPut'] = 'put'
+            put['Symbol'] = symbol
+
+    return options_list
+
+def Create_OptionsSet(symbol_list):
+    dfs = []
+    total = len(symbol_list)
+    count = 0
+    for s in symbol_list:
+        try:
+            data = parse_Options(s)
+            dfs.extend(data)
+
+            count += 1
+            print(f'{count}/{total} - {count/total:.0%}')
+
+        except Exception as e:
+            print(f'Exception: {str(e)} with symbol: {s}')
+
+    df_combined = pd.concat(dfs, ignore_index=True)
+    df_combined.to_csv(f'yahoo/Options.csv')
+
+def parse_KeyStats(symbol):
+    def trim_ending_number(field_name):
+        f = re.split(r'\d+$', field_name)
+        f = f[0].strip()
+        return f
+
+    def handle_field_with_Short(field_name):
+        if not re.search('Short', field_name):
+            return field_name
+
+        f = re.split(r'\(', field_name)
+        f = f[0].strip()
+        return f
+
+    html_file = f'yahoo/{symbol}_{categories[0]}.html'
+    key_stats_list = pd.read_html(html_file)
+
+    today = datetime.now().strftime('%Y%m%d')
+    key_stats_dict = {'Date': [today], 'Symbol': [symbol]}
+
+    for key_stats in key_stats_list:
+        for i in range(len(key_stats)):
+            nam = key_stats[0][i]
+            nam = trim_ending_number(nam)
+            nam = handle_field_with_Short(nam)
+            val = key_stats[1][i] 
+            key_stats_dict[nam] = [val] # Add as list so that we can extend later on
+
+    #print(key_stats_dict)
+    return key_stats_dict
+
+def Create_KeyStatsSet(symbol_list):
+    data_dict = None
+    total = len(symbol_list)
+    count = 0
+    for s in symbol_list:
+        try:
+            data = parse_KeyStats(s)
+            if not data_dict:
+                data_dict = data
+            else:
+                for d in data:
+                    data_dict[d].extend(data[d])
+
+            count += 1
+            print(f'{count}/{total} - {count/total:.0%}')
+
+        except Exception as e:
+            print(f'Exception: {str(e)} with symbol: {s}')
+
+    df = pd.DataFrame.from_dict(data_dict)
+    df.to_csv(f'yahoo/KeyStats.csv')
+
+def Check_Yahoo(symbol_list):
     def end_point(symbol, category):
         return f'{symbol}/{category}?p={symbol}'
 
     yahoo_finance = 'http://finance.yahoo.com/quote/'    
-    categories = ['key-statistics', 'financials', 'analysis', 'options']
 
-    total = len(stock_list)
+    total = len(symbol_list)
     count = 0
-    for s in stock_list:
+    for s in symbol_list:
         try:
             for c in categories:
                 link = yahoo_finance + end_point(s, c)
@@ -26,9 +118,11 @@ def Check_Yahoo(stock_list):
             count += 1
             print(f'{count}/{total} - {count/total:.0%}')
         except Exception as e:
-            print(str(e))
+            print(f'Exception: {str(e)} with symbol: {s}')
             time.sleep(2)
 
 if __name__ == '__main__':
     quotes = pd.read_csv('quotes.csv')
-    Check_Yahoo(quotes['Symbol'])   
+    #Check_Yahoo(quotes['Symbol'])   
+    #Create_KeyStatsSet(quotes['Symbol'])
+    Create_OptionsSet(quotes['Symbol'])
