@@ -6,23 +6,34 @@ from datetime import datetime
 categories = ('key-statistics', 'financials', 'analysis', 'options')
 
 def parse_Options(symbol):
-    html_file = f'yahoo/{symbol}_{categories[3]}.html'
-    options_list = pd.read_html(html_file)
-    if not options_list:
-        return None
+    symbol_dir = f'yahoo/{symbol}'
+    if not os.path.exists(symbol_dir):
+        return []
 
-    call = options_list[0]
-    if call is not None and not call.empty:
-        call['CallPut'] = 'call'
-        call['Symbol'] = symbol
+    files = os.listdir(symbol_dir)
+    if (len(files)) < 1:
+        return []
 
-    if len(options_list) > 1:
-        put = options_list[1]
-        if put is not None and not put.empty:
-            put['CallPut'] = 'put'
-            put['Symbol'] = symbol
+    dfs = []
+    for html_file in files:
+        data = pd.read_html(f'{symbol_dir}/{html_file}')
+        if not data:
+            continue
 
-    return options_list
+        call = data[0]
+        if call is not None and not call.empty:
+            call['CallPut'] = 'call'
+            call['Symbol'] = symbol
+
+        if len(data) > 1:
+            put = data[1]
+            if put is not None and not put.empty:
+                put['CallPut'] = 'put'
+                put['Symbol'] = symbol
+
+        dfs.extend(data)
+
+    return dfs
 
 def Create_OptionsSet(symbol_list):
     dfs = []
@@ -160,7 +171,7 @@ from multiprocessing import Pool
 import numpy as np
 if __name__ == '__main__':
     quotes = pd.read_csv('quotes.csv')
-    with Pool(20) as p:
-        p.map(Check_Yahoo, np.array_split(quotes['Symbol'], 10))   
+    #with Pool(20) as p:
+    #    p.map(Check_Yahoo, np.array_split(quotes['Symbol'], 10))   
     #Create_KeyStatsSet(quotes['Symbol'])
-    #Create_OptionsSet(quotes['Symbol'])
+    Create_OptionsSet(quotes['Symbol'])
