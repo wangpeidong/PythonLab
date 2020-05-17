@@ -95,6 +95,37 @@ def Create_KeyStatsSet(symbol_list):
     df = pd.DataFrame.from_dict(data_dict)
     df.to_csv(f'yahoo/KeyStats.csv')
 
+import bs4 as bs
+def scrapOptions(symbol, link):
+    try:
+        source = urllib.request.urlopen(link).read()
+        soup = bs.BeautifulSoup(source, 'lxml')
+        scripts = soup.find_all('script')
+        text = scripts[-5].text
+        m_text = text.split(r'"expirationDates":[')
+        if len(m_text) < 2:
+            return
+
+        n_text = m_text[1].split(r'],"hasMiniOptions"')
+        expirationDates = n_text[0].split(',')
+        if len(expirationDates) < 2:
+            return
+
+        symbol_dir = f'yahoo/{symbol}'
+        if not os.path.exists(symbol_dir):
+            os.makedirs(symbol_dir)
+        for date in expirationDates:
+            l = link + f'&date={date}'
+            print(l)
+            resp = urllib.request.urlopen(l).read()
+
+            file = f'{symbol_dir}/{symbol}_{categories[3]}_{date}.html'
+            save = open(file, 'w')
+            save.write(str(resp))
+            save.close()
+    except Exception as e:
+        print(f'Exception: {str(e)} with symbol: {symbol} to scrap Options')
+
 def Check_Yahoo(symbol_list):
     def end_point(symbol, category):
         return f'{symbol}/{category}?p={symbol}'
@@ -109,20 +140,27 @@ def Check_Yahoo(symbol_list):
                 link = yahoo_finance + end_point(s, c)
                 print(link)
                 
-                resp = urllib.request.urlopen(link).read()
+                if c == categories[3]:
+                    scrapOptions(s, link)
+                else:
+                    pass
+                    resp = urllib.request.urlopen(link).read()
 
-                file = f'yahoo/{s}_{c}.html'
-                save = open(file, 'w')
-                save.write(str(resp))
-                save.close()
+                    file = f'yahoo/{s}_{c}.html'
+                    save = open(file, 'w')
+                    save.write(str(resp))
+                    save.close()
             count += 1
             print(f'{count}/{total} - {count/total:.0%}')
         except Exception as e:
             print(f'Exception: {str(e)} with symbol: {s}')
             time.sleep(2)
 
+from multiprocessing import Pool
+import numpy as np
 if __name__ == '__main__':
     quotes = pd.read_csv('quotes.csv')
-    #Check_Yahoo(quotes['Symbol'])   
+    with Pool(20) as p:
+        p.map(Check_Yahoo, np.array_split(quotes['Symbol'], 10))   
     #Create_KeyStatsSet(quotes['Symbol'])
-    Create_OptionsSet(quotes['Symbol'])
+    #Create_OptionsSet(quotes['Symbol'])
