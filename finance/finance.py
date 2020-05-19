@@ -2,7 +2,31 @@ import datetime as dt
 import pandas_datareader.data as web
 import os.path as path
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+
+def loadPortfolio():
+    df = pd.read_csv('quotes.csv')
+    portfolio = set(df.Symbol.values.tolist())
+
+    main_df = pd.DataFrame()
+    for stock in portfolio:
+        df = sourcePrices(stock)
+        if df.empty:
+            continue
+        df.rename(columns={'Adj Close': stock}, inplace=True)
+        if main_df.empty:
+            main_df[stock] = df[stock]
+        else:
+            main_df = main_df.join(df[stock], how='outer')
+
+    return main_df
+
+# Plot portfolio correlation
+def plotPortCorr(portfolio):
+    port_corr = portfolio.corr()
+    plot_heatmap(port_corr.values, port_corr.columns, port_corr.index)
+    plt.show()
 
 def plot_heatmap(data, columns, rows):
 	fig, ax = plt.subplots()
