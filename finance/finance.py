@@ -1,6 +1,25 @@
 import datetime as dt
 import pandas_datareader.data as web
 import os.path as path
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_heatmap(data, columns, rows):
+	fig, ax = plt.subplots()
+	heatmap = ax.pcolor(data, cmap=plt.cm.RdYlGn)
+	fig.colorbar(heatmap)
+	ax.set_xticks(np.arange(data.shape[1]) + 0.5, minor=False)
+	ax.set_yticks(np.arange(data.shape[0]) + 0.5, minor=False)
+	ax.set_xticklabels(columns)
+	ax.set_yticklabels(rows)
+	ax.invert_yaxis()
+	ax.xaxis.tick_top()
+	plt.xticks(rotation=90)
+	heatmap.set_clim(-1,1)
+	for i in range(data.shape[1]):
+		for j in range(data.shape[0]):
+			ax.text(i+0.5, j+0.5, f'{data[i, j]:.2f}', ha="center", va="center", color="w")	
+	plt.tight_layout()
 
 start_date = dt.datetime(2015, 1, 2)
 end_date = dt.datetime.now()
