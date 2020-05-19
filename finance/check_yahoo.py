@@ -3,7 +3,7 @@ import os, time, re
 import pandas as pd
 from datetime import datetime
 
-categories = ('key-statistics', 'financials', 'analysis', 'options')
+categories = ('key-statistics', 'financials', 'analysis', 'options', 'profile')
 
 def parse_Options(symbol):
     symbol_dir = f'yahoo/{symbol}'
@@ -137,6 +137,37 @@ def scrapOptions(symbol, link):
     except Exception as e:
         print(f'Exception: {str(e)} with symbol: {symbol} to scrap Options')
 
+def scrapProfile(symbol):
+    try:
+        html_file = f'yahoo/{symbol}_profile.html'
+        with open(html_file) as source:
+            soup = bs.BeautifulSoup(source, 'lxml')
+            profile = [span.text for span in soup.body.find_all('span', class_='Fw(600)')]
+            address = soup.body.find_all('p')[1].text
+
+            profile.append(address)
+            profile.insert(0, symbol)
+        return profile
+    except Exception as e:
+        print(f'Exception: {str(e)} with symbol: {symbol} to scrap Profile')      
+
+def Create_ProfileSet(symbol_list):
+    total = len(symbol_list)
+    count = 0
+    profiles = {'Symbol':[], 'Sector':[], 'Industry':[], 'Employee':[], 'Address':[]}
+    for symbol in symbol_list:
+        profile = scrapProfile(symbol)
+        profiles['Symbol'].append(profile[0])
+        profiles['Sector'].append(profile[1])
+        profiles['Industry'].append(profile[2])
+        profiles['Employee'].append(profile[3])
+        profiles['Address'].append(profile[4])
+        count += 1
+        print(f'{count}/{total} - {count/total:.0%}')
+
+    df = pd.DataFrame(profiles)
+    df.to_csv('yahoo/Profiles.csv')
+
 def Check_Yahoo(symbol_list):
     def end_point(symbol, category):
         return f'{symbol}/{category}?p={symbol}'
@@ -154,7 +185,6 @@ def Check_Yahoo(symbol_list):
                 if c == categories[3]:
                     scrapOptions(s, link)
                 else:
-                    pass
                     resp = urllib.request.urlopen(link).read()
 
                     file = f'yahoo/{s}_{c}.html'
@@ -174,4 +204,5 @@ if __name__ == '__main__':
     #with Pool(20) as p:
     #    p.map(Check_Yahoo, np.array_split(quotes['Symbol'], 10))   
     #Create_KeyStatsSet(quotes['Symbol'])
-    Create_OptionsSet(quotes['Symbol'])
+    #Create_OptionsSet(quotes['Symbol'])
+    Create_ProfileSet(quotes['Symbol'])
