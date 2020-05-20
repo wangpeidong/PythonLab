@@ -22,6 +22,14 @@ def loadPortfolio():
 
     return main_df
 
+# Describe portfolio correlation
+def desc_correlation(portfolio):
+	corr = portfolio.corr()
+	desc = corr.describe()
+	# switch column and row
+	desc_tr = desc.T # desc.transpose()
+	return desc_tr
+
 # Plot portfolio correlation
 def plotPortCorr(portfolio):
     port_corr = portfolio.corr()
