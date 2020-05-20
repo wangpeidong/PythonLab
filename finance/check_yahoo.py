@@ -137,6 +137,13 @@ def scrapOptions(symbol, link):
     except Exception as e:
         print(f'Exception: {str(e)} with symbol: {symbol} to scrap Options')
 
+def parseCountry(address):
+	import re
+	country = re.search(r'\d{1}[a-zA-Z]{1}\D+[a-zA-Z]{1}\d{1}', address)
+	if country is not None:
+		return country.group()[1:-1]	
+	return address
+
 def scrapProfile(symbol):
     try:
         html_file = f'yahoo/{symbol}_profile.html'
